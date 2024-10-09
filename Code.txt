@@ -1,0 +1,266 @@
+# Doctor Appointment System
+A web application allowing patients to book appointments with doctors. Built with PHP and MySQL, styled with HTML and CSS.
+
+## Features
+- User registration and login
+- Book appointments
+- View appointments
+
+## Tech Stack
+- PHP
+- MySQL
+- HTML/CSS
+
+## Installation
+1. Clone the repository.
+2. Import `doctor_appointment_db.sql` into your MySQL database.
+3. Configure database credentials in `db.php`.
+4. Run the application on a local server using XAMPP or similar.
+
+
+
+doctor_appointment_system/
+│── /css
+│    └── style.css
+│── /js
+│    └── script.js
+│── /php
+│    ├── signup.php
+│    ├── login.php
+│    ├── book_appointment.php
+│    └── db.php
+│── /sql
+│    └── doctor_appointment_db.sql
+│── index.html
+└── README.md
+
+
+
+CREATE DATABASE doctor_appointment_db;
+
+USE doctor_appointment_db;
+
+-- Table for storing user data
+CREATE TABLE users (
+    userid INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    age INT NOT NULL,
+    email VARCHAR(50) UNIQUE NOT NULL,
+    phone VARCHAR(15) NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+-- Table for login credentials
+CREATE TABLE login (
+    userid INT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (userid) REFERENCES users(userid)
+);
+
+-- Table for storing appointment details
+CREATE TABLE appointments (
+    appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+    userid INT,
+    doctor_name VARCHAR(50),
+    specialty VARCHAR(50),
+    slot VARCHAR(50),
+    FOREIGN KEY (userid) REFERENCES users(userid)
+);
+
+-- Table for contact messages
+CREATE TABLE contact (
+    contact_id INT AUTO_INCREMENT PRIMARY KEY,
+    address VARCHAR(255),
+    email VARCHAR(50),
+    phone VARCHAR(15),
+    message TEXT
+);
+
+
+<?php
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "doctor_appointment_db";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+?>
+
+
+
+<?php
+include 'db.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
+    $age = $_POST['age'];
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
+    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+
+    $sql = "INSERT INTO users (username, age, email, phone, password) 
+            VALUES ('$username', $age, '$email', '$phone', '$password')";
+
+    if ($conn->query($sql) === TRUE) {
+        echo "User registered successfully!";
+    } else {
+        echo "Error: " . $conn->error;
+    }
+
+    $conn->close();
+}
+?>
+
+
+<?php
+session_start();
+include 'db.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $sql = "SELECT * FROM users WHERE username='$username'";
+    $result = $conn->query($sql);
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        if (password_verify($password, $row['password'])) {
+            $_SESSION['userid'] = $row['userid'];
+            header("Location: book_appointment.php");
+        } else {
+            echo "Invalid password.";
+        }
+    } else {
+        echo "No user found.";
+    }
+
+    $conn->close();
+}
+?>
+
+
+<?php
+session_start();
+include 'db.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $userid = $_SESSION['userid'];
+    $doctor_name = $_POST['doctor_name'];
+    $specialty = $_POST['specialty'];
+    $slot = $_POST['slot'];
+
+    $sql = "INSERT INTO appointments (userid, doctor_name, specialty, slot) 
+            VALUES ($userid, '$doctor_name', '$specialty', '$slot')";
+
+    if ($conn->query($sql) === TRUE) {
+        echo "Appointment booked successfully!";
+    } else {
+        echo "Error: " . $conn->error;
+    }
+
+    $conn->close();
+}
+?>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Doctor Appointment System</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome to the Doctor Appointment System</h1>
+        <nav>
+            <a href="signup.html">Sign Up</a> | <a href="login.html">Login</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Book Appointments with Ease</h2>
+    </main>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Sign Up</title>
+</head>
+<body>
+    <form action="php/signup.php" method="post">
+        <h2>Sign Up</h2>
+        <label>Username:</label>
+        <input type="text" name="username" required>
+        <label>Age:</label>
+        <input type="number" name="age" required>
+        <label>Email:</label>
+        <input type="email" name="email" required>
+        <label>Phone:</label>
+        <input type="text" name="phone" required>
+        <label>Password:</label>
+        <input type="password" name="password" required>
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Login</title>
+</head>
+<body>
+    <form action="php/login.php" method="post">
+        <h2>Login</h2>
+        <label>Username:</label>
+        <input type="text" name="username" required>
+        <label>Password:</label>
+        <input type="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+header {
+    text-align: center;
+    padding: 20px;
+}
+
+form {
+    width: 300px;
+    margin: 0 auto;
+}
+
+label {
+    display: block;
+    margin: 10px 0 5px;
+}
+
+
+
+
+
+
